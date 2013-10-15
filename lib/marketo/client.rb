@@ -68,8 +68,8 @@ module Rapleaf
         get_leads(LeadKey.new(LeadKeyType::COOKIE, cookie))
       end
 
-      def get_leads_by_idnum(idnum)
-        get_leads(LeadKey.new(LeadKeyType::IDNUM, idnum))
+      def get_lead_by_idnum(idnum)
+        get_lead(LeadKey.new(LeadKeyType::IDNUM, idnum))
       end
 
       def get_leads_by_email(email)
@@ -189,6 +189,22 @@ module Rapleaf
         end
       end
 
+      def get_lead(lead_key)
+        begin
+          response = send_request("mkt:paramsGetLead", {:lead_key => lead_key.to_hash})
+          record = response[:success_get_lead][:result][:lead_record_list][:lead_record]
+          case record
+          when Hash
+            return LeadRecord.from_hash(record)
+          when Array
+            return record.map { |hh| LeadRecord.from_hash(hh) }[0]
+          end
+        rescue Exception => e
+          @logger.log(e) if @logger
+          return nil
+        end
+      end
+
       def get_leads(lead_key)
         begin
           response = send_request("mkt:paramsGetLead", {:lead_key => lead_key.to_hash})
@@ -201,7 +217,7 @@ module Rapleaf
           end
         rescue Exception => e
           @logger.log(e) if @logger
-          return nil
+          return []
         end
       end
 
