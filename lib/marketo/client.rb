@@ -64,17 +64,16 @@ module Rapleaf
 
       public
 
-      def get_lead_by_cookie(cookie)
-        get_lead(LeadKey.new(LeadKeyType::COOKIE, cookie))
+      def get_leads_by_cookie(cookie)
+        get_leads(LeadKey.new(LeadKeyType::COOKIE, cookie))
       end
 
-      def get_lead_by_idnum(idnum)
-        get_lead(LeadKey.new(LeadKeyType::IDNUM, idnum))
+      def get_leads_by_idnum(idnum)
+        get_leads(LeadKey.new(LeadKeyType::IDNUM, idnum))
       end
 
-
-      def get_lead_by_email(email)
-        get_lead(LeadKey.new(LeadKeyType::EMAIL, email))
+      def get_leads_by_email(email)
+        get_leads(LeadKey.new(LeadKeyType::EMAIL, email))
       end
 
       def get_lead_activity(lead_key, activity_type_filter = nil, stream_position = nil, batch_size = nil )
@@ -190,17 +189,21 @@ module Rapleaf
         end
       end
 
-      def get_lead(lead_key)
+      def get_leads(lead_key)
         begin
           response = send_request("mkt:paramsGetLead", {:lead_key => lead_key.to_hash})
-          return LeadRecord.from_hash(response[:success_get_lead][:result][:lead_record_list][:lead_record])
+          record = response[:success_get_lead][:result][:lead_record_list][:lead_record]
+          case record
+          when Hash
+            return [LeadRecord.from_hash(record)]
+          when Array
+            return record.map { |hh| LeadRecord.from_hash(hh) }
+          end
         rescue Exception => e
           @logger.log(e) if @logger
           return nil
         end
       end
-
-
 
       def send_request(namespace, body)
         @header.set_time(DateTime.now)
